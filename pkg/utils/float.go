@@ -19,3 +19,7 @@ func Float32SliceToBytes(floats []float32) ([]byte, error) {
 	}
 	return buf.Bytes(), nil
 }
+
+func GetID(command string, os string) string {
+	return fmt.Sprintf("%s_%s", command, os)
+}

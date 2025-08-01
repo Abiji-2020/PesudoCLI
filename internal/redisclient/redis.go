@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/Abiji-2020/PesudoCLI/pkg/io"
 	"github.com/Abiji-2020/PesudoCLI/pkg/utils"
 	"github.com/redis/go-redis/v9"
 )
@@ -86,22 +87,33 @@ func (r *RedisClient) CreateVectorIndex(indexName string, dim int) error {
 	return nil
 }
 
-func (r *RedisClient) AddDocument(id, command, os, textChunk string, embedding []float32) error {
+func (r *RedisClient) AddDocument(docs []io.CommandDoc) error {
+	var errors []error
+	for _, doc := range docs {
+		id := utils.GetID(doc.Command, doc.Os)
+		bytesEmbedding, err := utils.Float32SliceToBytes(doc.Embedding)
+		if err != nil {
+			log.Fatal("failed to convert embedding to bytes: %w", err)
+			errors = append(errors, err)
+			continue
+		}
+		key := "doc:" + id
 
-	bytesEmbedding, err := utils.Float32SliceToBytes(embedding)
-	if err != nil {
-		return fmt.Errorf("failed to convert embedding to bytes: %w", err)
+		fields := map[string]interface{}{
+			"command":    doc.Command,
+			"os":         doc.Os,
+			"text_chunk": doc.TextChunk,
+			"embedding":  bytesEmbedding,
+		}
+		if err := r.client.HSet(r.ctx, key, fields).Err(); err != nil {
+			log.Fatal("failed to add document to Redis: %w", err)
+			errors = append(errors, err)
+			continue
+		}
 	}
-	key := "doc:" + id
-
-	fields := map[string]interface{}{
-		"command":    command,
-		"os":         os,
-		"text_chunk": textChunk,
-		"embedding":  bytesEmbedding,
+	if len(errors) > 0 {
+		return fmt.Errorf("encountered errors while adding documents: %v", errors)
 	}
-	if err := r.client.HSet(r.ctx, key, fields).Err(); err != nil {
-		return fmt.Errorf("failed to add document to Redis: %w", err)
-	}
+	log.Printf("Added %d documents to Redis", len(docs))
 	return nil
 }

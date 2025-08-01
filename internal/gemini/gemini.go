@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/Abiji-2020/PesudoCLI/pkg/io"
 	"google.golang.org/genai"
 )
 
@@ -34,17 +35,23 @@ func NewGeminiClient(apiKey string) (*GeminiClient, error) {
 	}, nil
 }
 
-func (g *GeminiClient) Embed(text string, model string) ([]float32, error) {
-	embedding, err := g.client.Models.EmbedContent(
-		g.ctx, model, genai.Text(text),
-		&genai.EmbedContentConfig{
-			TaskType: "RETRIEVAL_QUERY",
-		})
-	if err != nil {
-		return nil, fmt.Errorf("failed to embed text: %w", err)
+func (g *GeminiClient) Embed(docs []io.CommandDoc, model string) ([]io.CommandDoc, error) {
+	var embeddedDocs []io.CommandDoc
+	for _, doc := range docs {
+		embedding, err := g.client.Models.EmbedContent(
+			g.ctx, model, genai.Text(doc.TextChunk),
+			&genai.EmbedContentConfig{
+				TaskType: "RETRIEVAL_QUERY",
+			})
+		if err != nil {
+			return nil, fmt.Errorf("failed to embed text: %w", err)
+		}
+		if len(embedding.Embeddings) == 0 {
+			return nil, fmt.Errorf("no embeddings returned for text: %s", doc.TextChunk)
+		}
+		doc.Embedding = embedding.Embeddings[0].Values
+		embeddedDocs = append(embeddedDocs, doc)
 	}
-	if len(embedding.Embeddings) == 0 {
-		return nil, fmt.Errorf("no embeddings returned for text: %s", text)
-	}
-	return embedding.Embeddings[0].Values, nil
+	return embeddedDocs, nil
+
 }

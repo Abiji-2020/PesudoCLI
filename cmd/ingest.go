@@ -5,6 +5,7 @@ package cmd
 
 import (
 	"github.com/Abiji-2020/PesudoCLI/internal/config"
+	"github.com/Abiji-2020/PesudoCLI/pkg/io"
 	"github.com/spf13/cobra"
 )
 
@@ -19,13 +20,22 @@ var ingestCmd = &cobra.Command{
 			cmd.Println("Error loading configuration:", err)
 			return
 		}
+		// Load Documents
+		docs, err := io.LoadComandDocs()
+		if err != nil {
+			cmd.Println("Error loading command documents:", err)
+			return
+		}
+
 		cmd.Println("🔧 [INGEST] Ingesting data and embedding it into the vector store")
-		embeddedValue, err := GeminiClient.Embed("Hello, this is a test embedding.", config.GEMINI_EMBEDDING_MODEL)
+
+		embeddedValue, err := GeminiClient.Embed(docs, config.GEMINI_EMBEDDING_MODEL)
 		if err != nil {
 			cmd.Println("Error embedding data:", err)
 			return
 		}
-		err = RedisClient.AddDocument("test_id", "test_command", "test_os", "Hello, this is a test document.", embeddedValue)
+		cmd.Println("🔧 [INGEST] Data embedded successfully")
+		err = RedisClient.AddDocument(embeddedValue)
 		if err != nil {
 			cmd.Println("Error adding document to Redis:", err)
 			return
