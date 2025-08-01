@@ -4,11 +4,17 @@ Copyright © 2025 Abinand P <abinand0911@gmail.com>
 package cmd
 
 import (
+	"fmt"
 	"log"
 	"os"
 
+	"github.com/Abiji-2020/PesudoCLI/internal/config"
 	"github.com/Abiji-2020/PesudoCLI/internal/redisclient"
 	"github.com/spf13/cobra"
+)
+
+var (
+	RedisClient *redisclient.RedisClient
 )
 
 var rootCmd = &cobra.Command{
@@ -22,7 +28,12 @@ make the response more accurate from the context of the question and the vector 
 	Run: func(cmd *cobra.Command, args []string) {},
 
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
-		redisclient.InitRedisClient()
+		fmt.Println("🔧 [SETUP] Loading config and connecting to Redis...")
+		config, err := config.LoadConfig()
+		if err != nil {
+			log.Fatalf("Error loading config: %v", err)
+		}
+		RedisClient = redisclient.NewRedisClient(config.RedisAddr)
 	},
 }
 

@@ -11,19 +11,23 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-var (
-	Ctx    = context.Background()
-	Client *redis.Client
-)
+type RedisClient struct {
+	ctx    context.Context
+	client *redis.Client
+}
 
-func InitRedisClient() {
-	Client = redis.NewClient(&redis.Options{
-		Addr: "localhost:6379",
+func NewRedisClient(addr string) *RedisClient {
+	ctx := context.Background()
+	client := redis.NewClient(&redis.Options{
+		Addr: addr,
 	})
 
-	_, err := Client.Ping(Ctx).Result()
-	if err != nil {
-		log.Fatal("Could not connect to Redis:", err)
+	if err := client.Ping(ctx).Err(); err != nil {
+		log.Fatalf("Could not connect to Redis: %v", err)
 	}
-	log.Printf("Connected to Redis at %s", "localhost:6379")
+
+	return &RedisClient{
+		ctx:    ctx,
+		client: client,
+	}
 }
