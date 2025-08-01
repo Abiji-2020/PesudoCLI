@@ -9,12 +9,14 @@ import (
 	"os"
 
 	"github.com/Abiji-2020/PesudoCLI/internal/config"
+	"github.com/Abiji-2020/PesudoCLI/internal/gemini"
 	"github.com/Abiji-2020/PesudoCLI/internal/redisclient"
 	"github.com/spf13/cobra"
 )
 
 var (
-	RedisClient *redisclient.RedisClient
+	RedisClient  *redisclient.RedisClient
+	GeminiClient *gemini.GeminiClient
 )
 
 var rootCmd = &cobra.Command{
@@ -34,6 +36,11 @@ make the response more accurate from the context of the question and the vector 
 			log.Fatalf("Error loading config: %v", err)
 		}
 		RedisClient = redisclient.NewRedisClient(config.RedisAddr)
+		GeminiClient, err = gemini.NewGeminiClient(config.GEMINI_API_KEY)
+		if err != nil {
+			log.Fatalf("Error initializing Gemini client: %v", err)
+		}
+		fmt.Println("✅ [SETUP] Redis and Gemini clients initialized successfully")
 	},
 }
 

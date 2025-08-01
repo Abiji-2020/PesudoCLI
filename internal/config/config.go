@@ -11,7 +11,10 @@ import (
 )
 
 type Config struct {
-	RedisAddr string `json:"redis_addr"`
+	RedisAddr              string `json:"redis_addr"`
+	GEMINI_API_KEY         string `json:"gemini_api_key"`
+	GEMINI_EMBEDDING_MODEL string `json:"gemini_embedding_model"`
+	GEMINI_CHAT_MODEL      string `json:"gemini_chat_model"`
 }
 
 func getConfigPath() string {
@@ -24,7 +27,13 @@ func LoadConfig() (*Config, error) {
 	data, err := os.ReadFile(configPath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			defaultCfg := &Config{RedisAddr: "localhost:6379"}
+
+			defaultCfg := &Config{
+				RedisAddr:              "localhost:6379",
+				GEMINI_API_KEY:         "",
+				GEMINI_EMBEDDING_MODEL: "gemini-embedding-001",
+				GEMINI_CHAT_MODEL:      "gemini-2.0-flash",
+			}
 			if err := SaveConfig(defaultCfg); err != nil {
 				return nil, err
 			}
