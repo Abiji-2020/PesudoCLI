@@ -21,6 +21,8 @@ The `ask` command is the core feature of the CLI. It answers the questions based
 ```bash
 pesudocli ask "Explain about podman"
 ```
+<img width="1105" height="518" alt="image" src="https://github.com/user-attachments/assets/e37b1589-eef8-4b20-9977-c129040cc7bf" />
+
 
 ## init
 The `init` command is used to create the vector index in the redis database. It will use the default settings such as *`HNSW`* search algorithm.
