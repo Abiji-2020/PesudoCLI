@@ -3,7 +3,7 @@ name: Release
 on:
   schedule:
     - cron: '0 0 * * 0'  # Trigger every Sunday at midnight
-  workflow_dispatch:
+  workflow_dispatch: # Allow manual triggering
 
 permissions:
   contents: write
@@ -23,11 +23,40 @@ jobs:
         with:
           go-version: '1.24.3'
 
+      - name: Get current tag
+        id: current-tag
+        run: |
+          if git describe --tags --abbrev=0 &> /dev/null; then
+            echo "::set-output name=tag::$(git describe --tags --abbrev=0 | sed 's/v//')"
+          else
+            echo "::set-output name=tag::"
+          fi
+
+      - name: Bump minor version
+        id: bump-minor
+        run: |
+          if [ -z "${{ steps.current-tag.outputs.tag }}" ]; then
+            echo "::set-output name=new-tag::v0.1.0"
+          else
+            CURRENT_TAG=${{ steps.current-tag.outputs.tag }}
+            MINOR_VERSION=$(echo $CURRENT_TAG | cut -d '.' -f 2)
+            NEW_MINOR_VERSION=$((MINOR_VERSION + 1))
+            NEW_TAG=$(echo $CURRENT_TAG | sed "s/\.$MINOR_VERSION/\.$NEW_MINOR_VERSION/")
+            echo "::set-output name=new-tag::v$NEW_TAG"
+          fi
+
+      - name: Create tag
+        run: |
+          git tag -a ${{ steps.bump-minor.outputs.new-tag }} -m "Automated release"
+
+      - name: Push tag
+        run: |
+          git push origin ${{ steps.bump-minor.outputs.new-tag }}
+
       - name: Install Gorelaser
         uses: goreleaser/goreleaser-action@v6
         with:
-          version: '~> v2'
-          args: release --clean --snapshot
+          args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
