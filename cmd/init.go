@@ -38,7 +38,7 @@ You can specify the index name and dimensions for the vector store.`,
 func init() {
 	rootCmd.AddCommand(initCmd)
 
-	initCmd.Flags().StringP("index", "i", "", "Name of the index to create")
+	initCmd.Flags().StringP("index", "i", "pesudo_index", "Name of the index to create")
 	initCmd.Flags().IntP("dim", "d", 3072, "Dimensions for the vector store")
-	initCmd.MarkFlagRequired("index")
+
 }

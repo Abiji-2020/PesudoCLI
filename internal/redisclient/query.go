@@ -18,10 +18,6 @@ func (r *RedisClient) QuerySearch(indexName string, topK string, query []float32
 	if err != nil {
 		return nil, err
 	}
-	err = utils.WriteVectorToFile(query, "query_vector.bin")
-	if err != nil {
-		return nil, fmt.Errorf("error writing query vector to file: %w", err)
-	}
 	result, err := r.client.FTSearchWithArgs(r.ctx, indexName, "*=>[KNN "+topK+" @embedding $vectorbytes as vectoranswer]",
 		&redis.FTSearchOptions{
 			Return: []redis.FTSearchReturn{
