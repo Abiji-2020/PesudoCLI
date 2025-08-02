@@ -1,21 +1,21 @@
-name: Release 
+name: Release
 
-on: 
-  push:
-    branches:
-    - main 
-  release:
-    types: [published]
+on:
+  schedule:
+    - cron: '0 0 * * 0'  # Trigger every Sunday at midnight
+  workflow_dispatch:
+
 permissions:
-  contents: write 
-  packages: write 
+  contents: write
+  packages: write
 
 jobs:
   release:
-    runs-on : ubuntu-latest
+    runs-on: ubuntu-latest
+    if: ${{ github.ref == 'refs/heads/main' && github.event.repository.pushed_at != github.event.repository.updated_at }}  # Only trigger if there are new commits in the main branch
 
     steps:
-      - name: Checkout source 
+      - name: Checkout source
         uses: actions/checkout@v4
 
       - name: Set up go
@@ -27,7 +27,12 @@ jobs:
         uses: goreleaser/goreleaser-action@v5
         with:
           version: latest
-          args: release --clean
+          args: release --clean --snapshot
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN}}
-      
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate changelog
+        uses: heinrichreimer/github-changelog-generator-action@v2.3
+        with:
+          futureRelease: ${{ github.ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
