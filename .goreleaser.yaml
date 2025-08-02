@@ -1,0 +1,34 @@
+version: 2
+project_name: pesudocli
+
+builds:
+  - id: pesudocli
+    main: ./main.go
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}}
+
+archives:
+  - id: default 
+    name_template: "{{.ProjectName}}_{{.Version}}_{{.Os}}_{{.Arch}}"
+    files:
+      - LICENSE
+      - README.md
+
+checksum:
+  name_template: "{{.ProjectName}}_checksums.txt"
+  algorithm: sha256
+
+changelog:
+  use: git
+
+release:
+  github:
+   owner: Abiji-2020
+   name: PesudoCLI
