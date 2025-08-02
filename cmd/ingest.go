@@ -28,7 +28,7 @@ var ingestCmd = &cobra.Command{
 		}
 
 		cmd.Println("🔧 [INGEST] Ingesting data and embedding it into the vector store")
-
+		docs = docs[:800] // Limit to 800 to avoid limiting issues
 		embeddedValue, err := GeminiClient.Embed(docs, config.GEMINI_EMBEDDING_MODEL)
 		if err != nil {
 			cmd.Println("Error embedding data:", err)

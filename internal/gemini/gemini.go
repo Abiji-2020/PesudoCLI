@@ -6,6 +6,8 @@ package gemini
 import (
 	"context"
 	"fmt"
+	"strings"
+	"time"
 
 	"github.com/Abiji-2020/PesudoCLI/pkg/io"
 	"google.golang.org/genai"
@@ -17,7 +19,8 @@ type GeminiClient struct {
 }
 
 type Embedder interface {
-	Embed(text string) ([]float32, error)
+	Embed(docs []io.CommandDoc, model string) ([]float32, error)
+	EmbedQuestion(question string, model string) ([]float32, error)
 }
 
 func NewGeminiClient(apiKey string) (*GeminiClient, error) {
@@ -26,6 +29,7 @@ func NewGeminiClient(apiKey string) (*GeminiClient, error) {
 		APIKey:  apiKey,
 		Backend: genai.BackendGeminiAPI,
 	})
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Gemini client: %w", err)
 	}
@@ -36,22 +40,64 @@ func NewGeminiClient(apiKey string) (*GeminiClient, error) {
 }
 
 func (g *GeminiClient) Embed(docs []io.CommandDoc, model string) ([]io.CommandDoc, error) {
-	var embeddedDocs []io.CommandDoc
+
+	var contents []*genai.Content
 	for _, doc := range docs {
+		content := genai.NewContentFromText(doc.TextChunk, genai.RoleUser)
+		contents = append(contents, content)
+	}
+
+	var embeddedDocs []io.CommandDoc
+	for i := 0; i < len(contents); i += 20 {
+		end := i + 20
+		if end > len(contents) {
+			end = len(contents)
+		}
+		sample := contents[i:end]
+
 		embedding, err := g.client.Models.EmbedContent(
-			g.ctx, model, genai.Text(doc.TextChunk),
-			&genai.EmbedContentConfig{
-				TaskType: "RETRIEVAL_QUERY",
+			g.ctx, model, sample, &genai.EmbedContentConfig{
+				TaskType: "QUESTION_ANSWERING",
 			})
 		if err != nil {
+			if strings.Contains(err.Error(), "Resource has been exhausted") {
+				fmt.Println("Rate limit exceeded, adding the values to redis")
+
+				return embeddedDocs, nil
+			}
 			return nil, fmt.Errorf("failed to embed text: %w", err)
 		}
 		if len(embedding.Embeddings) == 0 {
-			return nil, fmt.Errorf("no embeddings returned for text: %s", doc.TextChunk)
+			return nil, fmt.Errorf("no embeddings returned for the batch of text")
 		}
-		doc.Embedding = embedding.Embeddings[0].Values
-		embeddedDocs = append(embeddedDocs, doc)
+		fmt.Println("Embedding response received for batch:", i/20+1)
+		embeddings := embedding.Embeddings
+		temp := i
+		for j := range embeddings {
+			if len(embeddings[j].Values) == 0 {
+				return nil, fmt.Errorf("no embedding values returned for text: %s", docs[i].TextChunk)
+			}
+
+			docs[temp].Embedding = embedding.Embeddings[j].Values
+			embeddedDocs = append(embeddedDocs, docs[temp])
+			temp++
+		}
+		time.Sleep(10 * time.Second) // Sleep to avoid rate limiting
 	}
 	return embeddedDocs, nil
 
+}
+
+func (g *GeminiClient) EmbedQuestion(question string, model string) ([]float32, error) {
+	embedding, err := g.client.Models.EmbedContent(
+		g.ctx, model, []*genai.Content{genai.NewContentFromText(question, genai.RoleUser)}, &genai.EmbedContentConfig{
+			TaskType: "QUESTION_ANSWERING",
+		})
+	if err != nil {
+		return nil, fmt.Errorf("failed to embed question: %w", err)
+	}
+	if len(embedding.Embeddings) == 0 || len(embedding.Embeddings[0].Values) == 0 {
+		return nil, fmt.Errorf("no embedding values returned for question: %s", question)
+	}
+	return embedding.Embeddings[0].Values, nil
 }
