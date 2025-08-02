@@ -23,12 +23,16 @@ type RedisClientInterface interface {
 	Client() *redis.Client
 	Close() error
 	Context() context.Context
+	CreateVectorIndex(indexName string, dim int) error
+	AddDocument(docs []io.CommandDoc) error
+	QuerySearch(indexName string, topK int, query []float32) ([]io.CommandDoc, error)
 }
 
 func NewRedisClient(addr string) *RedisClient {
 	ctx := context.Background()
 	client := redis.NewClient(&redis.Options{
-		Addr: addr,
+		Addr:          addr,
+		UnstableResp3: true,
 	})
 
 	if err := client.Ping(ctx).Err(); err != nil {

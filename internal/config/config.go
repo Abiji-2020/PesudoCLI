@@ -15,6 +15,7 @@ type Config struct {
 	GEMINI_API_KEY         string `json:"gemini_api_key"`
 	GEMINI_EMBEDDING_MODEL string `json:"gemini_embedding_model"`
 	GEMINI_CHAT_MODEL      string `json:"gemini_chat_model"`
+	IndexName              string `json:"index_name"`
 }
 
 func getConfigPath() string {
@@ -33,6 +34,7 @@ func LoadConfig() (*Config, error) {
 				GEMINI_API_KEY:         "",
 				GEMINI_EMBEDDING_MODEL: "gemini-embedding-001",
 				GEMINI_CHAT_MODEL:      "gemini-2.0-flash",
+				IndexName:              "pesudo_index",
 			}
 			if err := SaveConfig(defaultCfg); err != nil {
 				return nil, err

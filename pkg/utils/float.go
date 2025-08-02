@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"os"
 )
 
 func Float32SliceToBytes(floats []float32) ([]byte, error) {
@@ -18,6 +19,13 @@ func Float32SliceToBytes(floats []float32) ([]byte, error) {
 		}
 	}
 	return buf.Bytes(), nil
+}
+func WriteVectorToFile(vec []float32, filename string) error {
+	data, err := Float32SliceToBytes(vec)
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(filename, data, 0644)
 }
 
 func GetID(command string, os string) string {

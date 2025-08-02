@@ -26,6 +26,7 @@ Currently, it has the configuration of the following:
 			GEMINI_API_KEY:         cmd.Flag("gemini-api-key").Value.String(),
 			GEMINI_EMBEDDING_MODEL: cmd.Flag("gemini-embedding-model").Value.String(),
 			GEMINI_CHAT_MODEL:      cmd.Flag("gemini-chat-model").Value.String(),
+			IndexName:              cmd.Flag("index-name").Value.String(),
 		})
 		if err != nil {
 			cmd.Println("Error saving configuration:", err)
@@ -41,5 +42,6 @@ func init() {
 	configCmd.Flags().StringP("gemini-api-key", "g", "", "Gemini API key")
 	configCmd.Flags().StringP("gemini-embedding-model", "e", "gemini-embedding-001", "Gemini embedding model (default: gemini-embedding-001)")
 	configCmd.Flags().StringP("gemini-chat-model", "c", "gemini-2.0-flash", "Gemini chat model (default: gemini-2.0-flash)")
+	configCmd.Flags().StringP("index-name", "i", "pesudo_index", "Index name for the vector store (default: pesudo_index)")
 	configCmd.MarkFlagRequired("gemini-api-key")
 }

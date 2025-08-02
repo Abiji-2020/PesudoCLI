@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Abiji-2020/PesudoCLI/internal/redisclient"
 	"github.com/Abiji-2020/PesudoCLI/pkg/io"
 	"google.golang.org/genai"
 )
@@ -21,6 +22,10 @@ type GeminiClient struct {
 type Embedder interface {
 	Embed(docs []io.CommandDoc, model string) ([]float32, error)
 	EmbedQuestion(question string, model string) ([]float32, error)
+}
+
+type GeminiChatInterface interface {
+	AskQuestion(question string, model string, contextValues []redisclient.QuerySearchResult) (string, error)
 }
 
 func NewGeminiClient(apiKey string) (*GeminiClient, error) {
@@ -57,7 +62,8 @@ func (g *GeminiClient) Embed(docs []io.CommandDoc, model string) ([]io.CommandDo
 
 		embedding, err := g.client.Models.EmbedContent(
 			g.ctx, model, sample, &genai.EmbedContentConfig{
-				TaskType: "QUESTION_ANSWERING",
+				TaskType:             "QUESTION_ANSWERING",
+				OutputDimensionality: func(i int32) *int32 { return &i }(3072),
 			})
 		if err != nil {
 			if strings.Contains(err.Error(), "Resource has been exhausted") {
@@ -91,7 +97,8 @@ func (g *GeminiClient) Embed(docs []io.CommandDoc, model string) ([]io.CommandDo
 func (g *GeminiClient) EmbedQuestion(question string, model string) ([]float32, error) {
 	embedding, err := g.client.Models.EmbedContent(
 		g.ctx, model, []*genai.Content{genai.NewContentFromText(question, genai.RoleUser)}, &genai.EmbedContentConfig{
-			TaskType: "QUESTION_ANSWERING",
+			TaskType:             "QUESTION_ANSWERING",
+			OutputDimensionality: func(i int32) *int32 { return &i }(3072), // Adjust as needed
 		})
 	if err != nil {
 		return nil, fmt.Errorf("failed to embed question: %w", err)
